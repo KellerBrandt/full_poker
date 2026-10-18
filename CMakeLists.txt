@@ -19,3 +19,13 @@ enable_testing()
 add_executable(kuhn_test tests/kuhn_test.cpp)
 target_link_libraries(kuhn_test PRIVATE full_poker)
 add_test(NAME kuhn_test COMMAND kuhn_test)
+
+add_executable(leduc_test tests/leduc_test.cpp)
+target_link_libraries(leduc_test PRIVATE full_poker)
+add_test(NAME leduc_test COMMAND leduc_test)
+
+add_executable(kuhn_bench bench/kuhn_bench.cpp)
+target_link_libraries(kuhn_bench PRIVATE full_poker)
+
+add_executable(leduc_bench bench/leduc_bench.cpp)
+target_link_libraries(leduc_bench PRIVATE full_poker)

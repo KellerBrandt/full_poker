@@ -35,7 +35,9 @@ struct Kuhn {
 				return kTerminalPlayer;
 			}
 
-			return static_cast<Player>((std::bit_width(history) - 1) % 2);
+			int num_actions = std::bit_width(history) - 1;
+
+			return num_actions % 2;
 		}
 
 		FixedList<Action, kMaxActions> legal_actions() const {

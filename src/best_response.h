@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <limits>
 #include <unordered_map>
 #include <vector>
@@ -15,7 +16,7 @@ public:
 		collect(G::initial_state(), 1.0);
 	}
 
-	double value() { return value(G::initial_state()); }
+	double value() { return state_value(G::initial_state()); }
 
 private:
 	using State = typename G::State;
@@ -66,7 +67,7 @@ private:
 		}
 	}
 
-	double value(const State& state) {
+	double state_value(const State& state) {
 		Player player = state.current_player();
 
 		if (player == kTerminalPlayer) {
@@ -79,17 +80,18 @@ private:
 			for (ChanceOutcome outcome : state.chance_outcomes()) {
 				State child = state;
 				child.apply(outcome.action);
-				total += outcome.prob * value(child);
+				total += outcome.prob * state_value(child);
 			}
 
 			return total;
 		}
 
 		if (player == br_player_) {
+			Action action = best_action(state.infoset_key(player));
 			State child = state;
-			child.apply(best_action(state.infoset_key(player)));
+			child.apply(action);
 
-			return value(child);
+			return state_value(child);
 		}
 
 		auto actions = state.legal_actions();
@@ -99,7 +101,7 @@ private:
 		for (std::size_t i = 0; i < actions.size(); ++i) {
 			State child = state;
 			child.apply(actions[i]);
-			total += probs[i] * value(child);
+			total += probs[i] * state_value(child);
 		}
 
 		return total;
@@ -123,7 +125,7 @@ private:
 			for (const WeightedState& weighted : states) {
 				State child = weighted.state;
 				child.apply(action);
-				ev += weighted.reach * value(child);
+				ev += weighted.reach * state_value(child);
 			}
 
 			if (ev > best_ev) {
