@@ -13,7 +13,7 @@ template <Game G, Policy<G> P>
 class BestResponse {
 public:
 	BestResponse(const P& policy, Player br_player) : policy_(policy), br_player_(br_player) {
-		collect(G::initial_state(), 1.0);
+		collect_infoset_states(G::initial_state(), 1.0);
 	}
 
 	double value() { return state_value(G::initial_state()); }
@@ -28,7 +28,7 @@ private:
 		double reach;
 	};
 
-	void collect(const State& state, double reach) {
+	void collect_infoset_states(const State& state, double reach) {
 		Player player = state.current_player();
 
 		if (player == kTerminalPlayer) {
@@ -39,19 +39,19 @@ private:
 			for (ChanceOutcome outcome : state.chance_outcomes()) {
 				State child = state;
 				child.apply(outcome.action);
-				collect(child, reach * outcome.prob);
+				collect_infoset_states(child, reach * outcome.prob);
 			}
 
 			return;
 		}
 
 		if (player == br_player_) {
-			infosets_[state.infoset_key(player)].push_back({state, reach});
+			infoset_states_[state.infoset_key(player)].push_back({state, reach});
 
 			for (Action action : state.legal_actions()) {
 				State child = state;
 				child.apply(action);
-				collect(child, reach);
+				collect_infoset_states(child, reach);
 			}
 
 			return;
@@ -63,7 +63,7 @@ private:
 		for (std::size_t i = 0; i < actions.size(); ++i) {
 			State child = state;
 			child.apply(actions[i]);
-			collect(child, reach * probs[i]);
+			collect_infoset_states(child, reach * probs[i]);
 		}
 	}
 
@@ -115,17 +115,17 @@ private:
 			return it->second;
 		}
 
-		const std::vector<WeightedState>& states = infosets_.at(key);
+		const std::vector<WeightedState>& states = infoset_states_.at(key);
 		Action best = 0;
 		double best_ev = -std::numeric_limits<double>::infinity();
 
 		for (Action action : states[0].state.legal_actions()) {
 			double ev = 0;
 
-			for (const WeightedState& weighted : states) {
-				State child = weighted.state;
+			for (const WeightedState& weighted_state : states) {
+				State child = weighted_state.state;
 				child.apply(action);
-				ev += weighted.reach * state_value(child);
+				ev += weighted_state.reach * state_value(child);
 			}
 
 			if (ev > best_ev) {
@@ -141,6 +141,6 @@ private:
 
 	const P& policy_;
 	Player br_player_;
-	std::unordered_map<InfoSetKey, std::vector<WeightedState>> infosets_;
+	std::unordered_map<InfoSetKey, std::vector<WeightedState>> infoset_states_;
 	std::unordered_map<InfoSetKey, Action> best_actions_;
 };

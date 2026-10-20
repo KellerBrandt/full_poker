@@ -11,7 +11,7 @@
 
 int main() {
 	TreeStats<Leduc> stats;
-	walk<Leduc>(Leduc::initial_state(), stats);
+	walk_tree<Leduc>(Leduc::initial_state(), stats);
 
 	check(stats.terminals == 1116);
 	check(stats.infosets.size() == 288);
@@ -41,6 +41,18 @@ int main() {
 	check(cfr.table().size() == stats.infosets.size());
 	check(early_exploitability < uniform_exploitability);
 	check(late_exploitability < early_exploitability);
+
+	CFRPlus<Leduc> cfr_plus;
+
+	for (int i = 0; i < 1000; ++i) {
+		cfr_plus.iterate();
+	}
+
+	AveragePolicy<Leduc> cfr_plus_policy(cfr_plus.table());
+	double cfr_plus_exploitability = exploitability<Leduc>(cfr_plus_policy);
+	std::printf("cfr+ exploitability after 1000 iterations: %g\n", cfr_plus_exploitability);
+
+	check(cfr_plus_exploitability < late_exploitability);
 
 	if (failures == 0) {
 		std::printf("leduc_test: OK\n");

@@ -98,6 +98,7 @@ struct Leduc {
 
 			return outcomes;
 		}
+
 		void apply(Action action) {
 			Player player = current_player();
 
@@ -137,6 +138,7 @@ struct Leduc {
 				num_raises = 0;
 			}
 		}
+
 		// any pair beats any high card
 		int hand_strength(Player player) const {
 			int rank = private_cards[player];
@@ -162,7 +164,9 @@ struct Leduc {
 
 			return strength > opponent_strength ? contributions[opponent] : -contributions[player];
 		}
-		// bits 0-1: private card, 2-3: public card + 1 (0 = not dealt), 4-12: round 1 history, 13-21: round 2 history
+
+		// bits 0-1: private card, 2-3: public card + 1 (0 = not dealt)
+		// bits 4-12: round 0 history, 13-21: round 1 history
 		InfoSetKey infoset_key(Player player) const {
 			InfoSetKey key = static_cast<InfoSetKey>(private_cards[player]);
 			key |= static_cast<InfoSetKey>(public_card + 1) << 2;

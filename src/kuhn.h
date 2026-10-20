@@ -79,20 +79,20 @@ struct Kuhn {
 		double utility(Player player) const {
 			assert(current_player() == kTerminalPlayer);
 
-			double p0;
+			double p0_utility;
 
 			if (history == 0b110) {
 				// bp: p1 folds
-				p0 = 1;
+				p0_utility = 1;
 			} else if (history == 0b1010) {
 				// pbp: p0 folds
-				p0 = -1;
+				p0_utility = -1;
 			} else {
 				double stake = history == 0b100 ? 1 : 2;
-				p0 = cards[0] > cards[1] ? stake : -stake;
+				p0_utility = cards[0] > cards[1] ? stake : -stake;
 			}
 
-			return player == 0 ? p0 : -p0;
+			return player == 0 ? p0_utility : -p0_utility;
 		}
 
 		InfoSetKey infoset_key(Player player) const {

@@ -16,18 +16,18 @@ public:
 		Player player = state.current_player();
 		const Entry* entry = table_.find(state.infoset_key(player));
 
-		double total = 0;
+		double strategy_sum_total = 0;
 
 		if (entry != nullptr) {
 			for (std::size_t i = 0; i < num_actions; ++i) {
-				total += entry->strategy_sum[i];
+				strategy_sum_total += entry->strategy_sum[i];
 			}
 		}
 
 		FixedList<double, G::kMaxActions> probs;
 
 		for (std::size_t i = 0; i < num_actions; ++i) {
-			probs.push_back(total > 0 ? entry->strategy_sum[i] / total : 1.0 / num_actions);
+			probs.push_back(strategy_sum_total > 0 ? entry->strategy_sum[i] / strategy_sum_total : 1.0 / num_actions);
 		}
 
 		return probs;
