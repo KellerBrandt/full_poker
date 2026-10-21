@@ -24,7 +24,7 @@ void bench_solver(const char* name, int iterations) {
 	std::printf("%s: %d iterations in %.3f s (%.0f iterations/s)\n", name, iterations, seconds, iterations / seconds);
 	std::printf("%.0f nodes (%.0f nodes/s, %.2f ns/node)\n", nodes_visited, nodes_visited / seconds, seconds * 1e9 / nodes_visited);
 
-	AveragePolicy<G> policy(solver.table());
+	AveragePolicy policy(solver.infoset_table());
 	double solver_exploitability = exploitability<G>(policy);
 
 	std::printf("exploitability: %g\n\n", solver_exploitability);

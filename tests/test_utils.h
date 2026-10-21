@@ -10,9 +10,9 @@
 
 inline int failures = 0;
 
-inline void check(bool cond, std::source_location loc = std::source_location::current()) {
-	if (!cond) {
-		std::fprintf(stderr, "%s:%u: check failed\n", loc.file_name(), loc.line());
+inline void check(bool condition, std::source_location location = std::source_location::current()) {
+	if (!condition) {
+		std::fprintf(stderr, "%s:%u: check failed\n", location.file_name(), location.line());
 		++failures;
 	}
 }

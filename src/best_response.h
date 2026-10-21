@@ -16,7 +16,7 @@ public:
 		collect_infoset_states(G::initial_state(), 1.0);
 	}
 
-	double value() { return state_value(G::initial_state()); }
+	double br_value() { return state_value(G::initial_state()); }
 
 private:
 	using State = typename G::State;
@@ -75,15 +75,15 @@ private:
 		}
 
 		if (player == kChancePlayer) {
-			double total = 0;
+			double expected_value = 0;
 
 			for (ChanceOutcome outcome : state.chance_outcomes()) {
 				State child = state;
 				child.apply(outcome.action);
-				total += outcome.prob * state_value(child);
+				expected_value += outcome.prob * state_value(child);
 			}
 
-			return total;
+			return expected_value;
 		}
 
 		if (player == br_player_) {
@@ -96,15 +96,15 @@ private:
 
 		auto actions = state.legal_actions();
 		auto probs = policy_.action_probs(state);
-		double total = 0;
+		double expected_value = 0;
 
 		for (std::size_t i = 0; i < actions.size(); ++i) {
 			State child = state;
 			child.apply(actions[i]);
-			total += probs[i] * state_value(child);
+			expected_value += probs[i] * state_value(child);
 		}
 
-		return total;
+		return expected_value;
 	}
 
 	// action maximizing reach-weighted value summed over every state in the infoset
@@ -116,8 +116,8 @@ private:
 		}
 
 		const std::vector<WeightedState>& states = infoset_states_.at(key);
-		Action best = 0;
-		double best_ev = -std::numeric_limits<double>::infinity();
+		Action max_ev_action = 0;
+		double max_ev = -std::numeric_limits<double>::infinity();
 
 		for (Action action : states[0].state.legal_actions()) {
 			double ev = 0;
@@ -128,15 +128,15 @@ private:
 				ev += weighted_state.reach * state_value(child);
 			}
 
-			if (ev > best_ev) {
-				best_ev = ev;
-				best = action;
+			if (ev > max_ev) {
+				max_ev = ev;
+				max_ev_action = action;
 			}
 		}
 
-		best_actions_[key] = best;
+		best_actions_[key] = max_ev_action;
 
-		return best;
+		return max_ev_action;
 	}
 
 	const P& policy_;

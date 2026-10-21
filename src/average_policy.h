@@ -6,15 +6,15 @@
 #include "game.h"
 #include "infoset_table.h"
 
-template <Game G>
+template <Game G, typename Entry>
 class AveragePolicy {
 public:
-	explicit AveragePolicy(const InfoSetTable<G>& table) : table_(table) {}
+	explicit AveragePolicy(const InfoSetTable<G, Entry>& infoset_table) : infoset_table_(infoset_table) {}
 
 	FixedList<double, G::kMaxActions> action_probs(const typename G::State& state) const {
 		std::size_t num_actions = state.legal_actions().size();
 		Player player = state.current_player();
-		const Entry* entry = table_.find(state.infoset_key(player));
+		const Entry* entry = infoset_table_.find(state.infoset_key(player));
 
 		double strategy_sum_total = 0;
 
@@ -34,7 +34,5 @@ public:
 	}
 
 private:
-	using Entry = typename InfoSetTable<G>::Entry;
-
-	const InfoSetTable<G>& table_;
+	const InfoSetTable<G, Entry>& infoset_table_;
 };

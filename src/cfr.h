@@ -8,6 +8,7 @@
 #include "fixed_list.h"
 #include "game.h"
 #include "infoset_table.h"
+#include "regret_matching.h"
 
 enum class Averaging { Uniform, Linear };
 
@@ -21,6 +22,12 @@ struct CFROptions {
 template <Game G, CFROptions Options = CFROptions{}>
 class CFR {
 public:
+	struct Entry {
+		std::array<double, G::kMaxActions> regret_sum = {};
+		std::array<double, G::kMaxActions> strategy_sum = {};
+		std::array<double, G::kMaxActions> iteration_regret = {};
+	};
+
 	void iterate() {
 		++iteration_;
 
@@ -39,19 +46,18 @@ public:
 		}
 	}
 
-	const InfoSetTable<G>& table() const { return table_; }
+	const InfoSetTable<G, Entry>& infoset_table() const { return infoset_table_; }
 
 	uint64_t nodes_visited() const { return nodes_visited_; }
 
 private:
 	using State = typename G::State;
-	using Entry = typename InfoSetTable<G>::Entry;
 	using Reach = std::array<double, G::kNumPlayers>;
 	using Utilities = std::array<double, G::kNumPlayers>;
 	using Strategy = FixedList<double, G::kMaxActions>;
 
 	void apply_iteration_regret() {
-		for (auto& [key, entry] : table_) {
+		for (auto& [key, entry] : infoset_table_) {
 			for (int i = 0; i < G::kMaxActions; ++i) {
 				entry.regret_sum[i] += entry.iteration_regret[i];
 				entry.iteration_regret[i] = 0;
@@ -63,25 +69,8 @@ private:
 		}
 	}
 
-	static Strategy regret_matching(const Entry& entry, std::size_t num_actions) {
-		double positive_regret_sum = 0;
-
-		for (std::size_t i = 0; i < num_actions; ++i) {
-			positive_regret_sum += std::max(entry.regret_sum[i], 0.0);
-		}
-
-		Strategy strategy;
-
-		for (std::size_t i = 0; i < num_actions; ++i) {
-			double positive_regret = std::max(entry.regret_sum[i], 0.0);
-			strategy.push_back(positive_regret_sum > 0 ? positive_regret / positive_regret_sum : 1.0 / num_actions);
-		}
-
-		return strategy;
-	}
-
 	Utilities traverse(const State& state, const Reach& reach, double chance_reach) {
-		if (std::none_of(reach.begin(), reach.end(), [](double r) { return r > 0; })) {
+		if (std::none_of(reach.begin(), reach.end(), [](double player_reach) { return player_reach > 0; })) {
 			return {};
 		}
 
@@ -117,8 +106,8 @@ private:
 		}
 
 		auto actions = state.legal_actions();
-		Entry& entry = table_[state.infoset_key(player)];
-		Strategy strategy = regret_matching(entry, actions.size());
+		Entry& entry = infoset_table_[state.infoset_key(player)];
+		Strategy strategy = regret_matching(entry.regret_sum, actions.size());
 
 		Utilities utilities = {};
 		std::array<Utilities, G::kMaxActions> action_utilities;
@@ -161,7 +150,7 @@ private:
 		return utilities;
 	}
 
-	InfoSetTable<G> table_;
+	InfoSetTable<G, Entry> infoset_table_;
 	uint64_t nodes_visited_ = 0;
 	uint64_t iteration_ = 0;
 	Player updating_player_ = 0;

@@ -1,21 +1,14 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <unordered_map>
 
 #include "game.h"
 
 // data indexed in legal_actions() order
-template <Game G>
+template <Game G, typename Entry>
 class InfoSetTable {
 public:
-	struct Entry {
-		std::array<double, G::kMaxActions> regret_sum = {};
-		std::array<double, G::kMaxActions> strategy_sum = {};
-		std::array<double, G::kMaxActions> iteration_regret = {};
-	};
-
 	Entry& operator[](const typename G::InfoSetKey& key) { return entries_[key]; }
 
 	const Entry* find(const typename G::InfoSetKey& key) const {
