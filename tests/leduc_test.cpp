@@ -1,6 +1,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <set>
+#include <vector>
 
 #include "average_policy.h"
 #include "cfr.h"
@@ -16,6 +18,14 @@ int main() {
 
 	check(stats.terminals == 1116);
 	check(stats.infosets.size() == 288);
+
+	std::set<std::vector<float>> distinct_tensors;
+
+	for (const auto& [infoset, tensor] : stats.infoset_tensors) {
+		distinct_tensors.insert(tensor);
+	}
+
+	check(distinct_tensors.size() == 288);
 
 	// published uniform random NashConv is 4.747222, exploitability is half
 	UniformPolicy<Leduc> uniform_policy;
@@ -39,8 +49,7 @@ int main() {
 	}
 
 	double cfr_exploitability = exploitability<Leduc>(cfr_policy);
-	std::printf("cfr exploitability: %g after %d iterations, %g after %d\n",
-		cfr_early_exploitability, cfr_early_iterations, cfr_exploitability, cfr_iterations);
+	std::printf("cfr exploitability: %g after %d iterations, %g after %d\n", cfr_early_exploitability, cfr_early_iterations, cfr_exploitability, cfr_iterations);
 
 	check(cfr.infoset_table().size() == stats.infosets.size());
 	check(cfr_early_exploitability < uniform_exploitability);
@@ -74,8 +83,7 @@ int main() {
 	}
 
 	double mccfr_exploitability = exploitability<Leduc>(mccfr_policy);
-	std::printf("mccfr exploitability: %g after %d iterations, %g after %d\n",
-		mccfr_early_exploitability, mccfr_early_iterations, mccfr_exploitability, mccfr_iterations);
+	std::printf("mccfr exploitability: %g after %d iterations, %g after %d\n", mccfr_early_exploitability, mccfr_early_iterations, mccfr_exploitability, mccfr_iterations);
 
 	check(mccfr_early_exploitability < uniform_exploitability);
 	check(mccfr_exploitability < mccfr_early_exploitability);

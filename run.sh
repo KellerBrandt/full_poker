@@ -15,7 +15,11 @@ if [[ "$1" == *_bench ]]; then
 	build_type=Release
 fi
 
-cmake -S . -B "$build_dir" -DCMAKE_BUILD_TYPE="$build_type" > /dev/null
+if [ ! -f "$build_dir/Makefile" ] || [ CMakeLists.txt -nt "$build_dir/Makefile" ]; then
+	torch_cmake_dir=$(ls -d "$CONDA_PREFIX"/lib/python3*/site-packages/torch/share/cmake 2>/dev/null | head -1 || true)
+
+	cmake -S . -B "$build_dir" -DCMAKE_BUILD_TYPE="$build_type" -DCMAKE_PREFIX_PATH="$torch_cmake_dir" > /dev/null
+fi
 
 if [ -n "$1" ]; then
 	cmake --build "$build_dir" --target "$1"

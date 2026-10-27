@@ -2,9 +2,11 @@
 
 #include <cmath>
 #include <cstdio>
+#include <map>
 #include <set>
 #include <source_location>
 #include <utility>
+#include <vector>
 
 #include "game.h"
 
@@ -21,6 +23,8 @@ template <Game G>
 struct TreeStats {
 	int terminals = 0;
 	std::set<std::pair<Player, typename G::InfoSetKey>> infosets;
+	// only filled for TensorGames
+	std::map<std::pair<Player, typename G::InfoSetKey>, std::vector<float>> infoset_tensors;
 };
 
 template <Game G>
@@ -58,6 +62,14 @@ void walk_tree(const typename G::State& state, TreeStats<G>& stats) {
 	}
 
 	stats.infosets.insert({player, state.infoset_key(player)});
+
+	if constexpr (TensorGame<G>) {
+		auto tensor = state.infoset_tensor(player);
+		std::vector<float> tensor_values(tensor.begin(), tensor.end());
+		auto [it, inserted] = stats.infoset_tensors.try_emplace({player, state.infoset_key(player)}, tensor_values);
+
+		check(inserted || it->second == tensor_values);
+	}
 
 	for (Action action : state.legal_actions()) {
 		typename G::State child = state;

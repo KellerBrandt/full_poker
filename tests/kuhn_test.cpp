@@ -65,8 +65,7 @@ int main() {
 	}
 
 	double mccfr_exploitability = exploitability<Kuhn>(mccfr_policy);
-	std::printf("mccfr exploitability: %g after %d iterations, %g after %d\n",
-		mccfr_early_exploitability, mccfr_early_iterations, mccfr_exploitability, mccfr_iterations);
+	std::printf("mccfr exploitability: %g after %d iterations, %g after %d\n", mccfr_early_exploitability, mccfr_early_iterations, mccfr_exploitability, mccfr_iterations);
 
 	check(mccfr_early_exploitability < uniform_exploitability);
 	check(mccfr_exploitability < mccfr_early_exploitability);

@@ -9,6 +9,7 @@
 #include "game.h"
 #include "infoset_table.h"
 #include "regret_matching.h"
+#include "sampling.h"
 
 // external sampling
 template <Game G>
@@ -35,7 +36,6 @@ private:
 	using State = typename G::State;
 	using Strategy = FixedList<double, G::kMaxActions>;
 
-	// returns updating_player's sampled utility at state
 	double traverse(const State& state, Player updating_player) {
 		++nodes_visited_;
 
@@ -47,7 +47,7 @@ private:
 
 		if (player == kChancePlayer) {
 			auto outcomes = state.chance_outcomes();
-			std::size_t i = sample(outcomes, [](const ChanceOutcome& outcome) { return outcome.prob; });
+			std::size_t i = sample_index(outcomes, [](const ChanceOutcome& outcome) { return outcome.prob; }, rng_);
 
 			State child = state;
 			child.apply(outcomes[i].action);
@@ -64,7 +64,7 @@ private:
 				entry.strategy_sum[i] += strategy[i];
 			}
 
-			std::size_t i = sample(strategy, [](double prob) { return prob; });
+			std::size_t i = sample_index(strategy, [](double prob) { return prob; }, rng_);
 
 			State child = state;
 			child.apply(actions[i]);
@@ -90,24 +90,7 @@ private:
 		return utility;
 	}
 
-	// index of an item, chosen with probability prob(item)
-	template <typename List, typename Prob>
-	std::size_t sample(const List& items, Prob prob) {
-		double r = uniform_(rng_);
-
-		for (std::size_t i = 0; i + 1 < items.size(); ++i) {
-			r -= prob(items[i]);
-
-			if (r < 0) {
-				return i;
-			}
-		}
-
-		return items.size() - 1;
-	}
-
 	InfoSetTable<G, Entry> infoset_table_;
 	std::mt19937_64 rng_;
-	std::uniform_real_distribution<double> uniform_{0.0, 1.0};
 	uint64_t nodes_visited_ = 0;
 };

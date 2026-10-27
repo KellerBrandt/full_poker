@@ -107,7 +107,6 @@ private:
 		return expected_value;
 	}
 
-	// action maximizing reach-weighted value summed over every state in the infoset
 	Action best_action(InfoSetKey key) {
 		auto it = best_actions_.find(key);
 

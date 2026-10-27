@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <concepts>
 #include <type_traits>
 
@@ -27,3 +28,9 @@ concept Game = requires(const typename G::State& state, typename G::State& mutab
 	{ state.utility(player) } -> std::same_as<double>;
 	{ state.infoset_key(player) } -> std::same_as<typename G::InfoSetKey>;
 } && std::is_trivially_copyable_v<typename G::State>;
+
+template <typename G>
+concept TensorGame = Game<G> && requires(const typename G::State& state, Player player) {
+	{ G::kInfosetTensorSize } -> std::convertible_to<int>;
+	{ state.infoset_tensor(player) } -> std::same_as<std::array<float, G::kInfosetTensorSize>>;
+};
