@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <bit>
 #include <cassert>
 #include <cstdint>
@@ -15,6 +16,9 @@ struct Leduc {
 	static constexpr int kAnte = 1;
 	static constexpr int kMaxRaisesPerRound = 2;
 	static constexpr int kRaiseSize[2] = {2, 4};
+	static constexpr int kMaxActionsPerRound = 4;
+	// private card, public card, then a call and a raise slot per round and action position
+	static constexpr int kInfosetTensorSize = 2 * kNumRanks + 2 * kMaxActionsPerRound * 2;
 
 	static constexpr Action kFold = 0;
 	static constexpr Action kCall = 1;
@@ -175,9 +179,33 @@ struct Leduc {
 
 			return key;
 		}
+
+		std::array<float, kInfosetTensorSize> infoset_tensor(Player player) const {
+			std::array<float, kInfosetTensorSize> tensor = {};
+
+			tensor[private_cards[player]] = 1;
+
+			if (public_card >= 0) {
+				tensor[kNumRanks + public_card] = 1;
+			}
+
+			for (int betting_round = 0; betting_round < 2; ++betting_round) {
+				int num_actions = (std::bit_width(history[betting_round]) - 1) / 2;
+
+				for (int position = 0; position < num_actions; ++position) {
+					int shift = 2 * (num_actions - 1 - position);
+					Action action = (history[betting_round] >> shift) & 0b11;
+					int slot = (betting_round * kMaxActionsPerRound + position) * 2 + (action == kRaise ? 1 : 0);
+
+					tensor[2 * kNumRanks + slot] = 1;
+				}
+			}
+
+			return tensor;
+		}
 	};
 
 	static State initial_state() { return {}; }
 };
 
-static_assert(Game<Leduc>);
+static_assert(TensorGame<Leduc>);
