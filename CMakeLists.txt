@@ -34,6 +34,9 @@ target_link_libraries(kuhn_bench PRIVATE full_poker)
 add_executable(leduc_bench bench/leduc_bench.cpp)
 target_link_libraries(leduc_bench PRIVATE full_poker)
 
+add_executable(hand_evaluator_bench bench/hand_evaluator_bench.cpp)
+target_link_libraries(hand_evaluator_bench PRIVATE full_poker)
+
 find_package(Torch QUIET)
 
 if(Torch_FOUND)
@@ -47,4 +50,7 @@ if(Torch_FOUND)
 	add_executable(deep_cfr_test tests/deep_cfr_test.cpp)
 	target_link_libraries(deep_cfr_test PRIVATE full_poker ${TORCH_LIBRARIES})
 	add_test(NAME deep_cfr_test COMMAND deep_cfr_test)
+
+	add_executable(deep_cfr_bench bench/deep_cfr_bench.cpp)
+	target_link_libraries(deep_cfr_bench PRIVATE full_poker ${TORCH_LIBRARIES})
 endif()

@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <random>
+#include <unordered_map>
 #include <vector>
 
 #include <torch/torch.h>
@@ -25,6 +27,7 @@ struct DeepCFROptions {
 	double learning_rate = 1e-3;
 	int64_t hidden_size = 64;
 	bool warm_start = true;
+	int num_threads = 1;
 	uint64_t seed = 0;
 };
 
@@ -40,6 +43,7 @@ public:
 
 	explicit DeepCFR(DeepCFROptions options = {}) : options_(options), rng_(options.seed) {
 		torch::manual_seed(options.seed);
+		torch::set_num_threads(options.num_threads);
 
 		for (Player p = 0; p < G::kNumPlayers; ++p) {
 			networks_[p] = make_network();
@@ -51,16 +55,29 @@ public:
 		++iteration_;
 
 		for (Player p = 0; p < G::kNumPlayers; ++p) {
+			auto traversal_start = std::chrono::steady_clock::now();
+
 			for (int traversal = 0; traversal < options_.traversals_per_iteration; ++traversal) {
 				traverse(G::initial_state(), p);
 			}
 
+			auto training_start = std::chrono::steady_clock::now();
 			train(p);
+			auto training_end = std::chrono::steady_clock::now();
+
+			traversal_seconds_ += std::chrono::duration<double>(training_start - traversal_start).count();
+			training_seconds_ += std::chrono::duration<double>(training_end - training_start).count();
+
+			strategy_cache_[p].clear();
 			network_history_[p].push_back(copy_network(networks_[p]));
 		}
 	}
 
 	uint64_t nodes_visited() const { return nodes_visited_; }
+
+	double traversal_seconds() const { return traversal_seconds_; }
+
+	double training_seconds() const { return training_seconds_; }
 
 	struct AverageStrategyEntry {
 		std::array<double, G::kMaxActions> strategy_sum = {};
@@ -125,6 +142,21 @@ private:
 		return strategy;
 	}
 
+	Strategy current_strategy(const State& state, Player player) {
+		auto& cache = strategy_cache_[player];
+		typename G::InfoSetKey key = state.infoset_key(player);
+		auto it = cache.find(key);
+
+		if (it != cache.end()) {
+			return it->second;
+		}
+
+		Strategy strategy = network_strategy(networks_[player], state, player);
+		cache.emplace(key, strategy);
+
+		return strategy;
+	}
+
 	double traverse(const State& state, Player updating_player) {
 		++nodes_visited_;
 
@@ -145,7 +177,7 @@ private:
 		}
 
 		auto actions = state.legal_actions();
-		Strategy strategy = network_strategy(networks_[player], state, player);
+		Strategy strategy = current_strategy(state, player);
 
 		if (player != updating_player) {
 			std::size_t i = sample_index(strategy, [](double prob) { return prob; }, rng_);
@@ -288,7 +320,10 @@ private:
 	std::array<Network, G::kNumPlayers> networks_;
 	std::vector<ReservoirBuffer<Sample>> buffers_;
 	std::array<std::vector<Network>, G::kNumPlayers> network_history_;
+	std::array<std::unordered_map<typename G::InfoSetKey, Strategy>, G::kNumPlayers> strategy_cache_;
 	std::mt19937_64 rng_;
 	int iteration_ = 0;
 	uint64_t nodes_visited_ = 0;
+	double traversal_seconds_ = 0;
+	double training_seconds_ = 0;
 };
