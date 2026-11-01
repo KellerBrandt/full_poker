@@ -24,6 +24,10 @@ add_executable(leduc_test tests/leduc_test.cpp)
 target_link_libraries(leduc_test PRIVATE full_poker)
 add_test(NAME leduc_test COMMAND leduc_test)
 
+add_executable(limit_holdem_test tests/limit_holdem_test.cpp)
+target_link_libraries(limit_holdem_test PRIVATE full_poker)
+add_test(NAME limit_holdem_test COMMAND limit_holdem_test)
+
 add_executable(reservoir_buffer_test tests/reservoir_buffer_test.cpp)
 target_link_libraries(reservoir_buffer_test PRIVATE full_poker)
 add_test(NAME reservoir_buffer_test COMMAND reservoir_buffer_test)
